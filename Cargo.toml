@@ -5,3 +5,6 @@ edition = "2024"
 
 [dependencies]
 git2 = "0.20.4"
+ratatui = "0.30.0"
+color-eyre = "0.6.3"
+crossterm = "0.29.0"
