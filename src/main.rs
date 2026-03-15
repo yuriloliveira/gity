@@ -9,7 +9,15 @@ mod screen;
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
-    ratatui::run(app)?;
+
+    let args: Vec<String> = env::args().collect();
+    match args.get(1).map(String::as_str) {
+        Some("add") => ratatui::run(app)?,
+        Some(cmd) => eprintln!("Unknown command: {}", cmd),
+        None => {
+            eprintln!("Usage: gity <command>\n\nCommands:\n  add    Stage changes interactively")
+        }
+    }
 
     Ok(())
 }
