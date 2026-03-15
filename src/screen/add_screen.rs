@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::{cmp::max, collections::HashSet};
 
 use crossterm::event::KeyCode;
 use git2::{Repository, Status};
@@ -122,7 +122,7 @@ impl AddScreen {
     }
 
     fn jump_down(&mut self) {
-        if self.current_line < self.unstaged_changes.len() - 1 {
+        if self.current_line < max(self.unstaged_changes.len(), 1) - 1 {
             self.current_line += 1;
         }
     }
