@@ -1,0 +1,17 @@
+name: Rust
+
+on:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build for MacOS Darwin
+      run: cargo build --release --target aarch64-apple-darwin
