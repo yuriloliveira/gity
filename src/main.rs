@@ -1,8 +1,8 @@
 use git2::{Repository, Status};
-use ratatui::{DefaultTerminal, Frame};
+use ratatui::DefaultTerminal;
 use std::env;
 
-use crate::screen::{add_screen::AddScreen, lib::ScreenState};
+use crate::screen::{add_screen::AddScreen, commit_screen::CommitScreen, lib::ScreenState};
 
 mod git_extensions;
 mod screen;
@@ -12,21 +12,21 @@ fn main() -> color_eyre::Result<()> {
 
     let args: Vec<String> = env::args().collect();
     match args.get(1).map(String::as_str) {
-        Some("add") => ratatui::run(app)?,
+        Some("add") => ratatui::run(add_app)?,
+        Some("commit") => ratatui::run(commit_app)?,
         Some(cmd) => eprintln!("Unknown command: {}", cmd),
         None => {
-            eprintln!("Usage: gity <command>\n\nCommands:\n  add    Stage changes interactively")
+            eprintln!(
+                "Usage: gity <command>\n\nCommands:\n  add      Stage changes interactively\n  commit   Commit staged changes interactively"
+            )
         }
     }
 
     Ok(())
 }
 
-fn app(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
-    let repo = match Repository::open(env::current_dir()?.display().to_string()) {
-        Ok(repo) => repo,
-        Err(e) => panic!("failed to open: {}", e),
-    };
+fn add_app(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
+    let repo = open_repo()?;
 
     let statuses = match repo.statuses(None) {
         Ok(statuses) => statuses,
@@ -46,7 +46,7 @@ fn app(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
     let mut screen = AddScreen::from(not_ignored_statuses);
 
     loop {
-        terminal.draw(build_render(&screen))?;
+        terminal.draw(|frame| screen.render(frame))?;
 
         if screen.handle_event(crossterm::event::read()?, &repo) == ScreenState::Finished {
             break Ok(());
@@ -54,6 +54,20 @@ fn app(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
     }
 }
 
-fn build_render(screen: &AddScreen) -> impl Fn(&mut Frame) {
-    move |frame| screen.render(frame)
+fn commit_app(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
+    let repo = open_repo()?;
+    let mut screen = CommitScreen::new();
+
+    loop {
+        terminal.draw(|frame| screen.render(frame))?;
+
+        if screen.handle_event(crossterm::event::read()?, &repo) == ScreenState::Finished {
+            break Ok(());
+        };
+    }
+}
+
+fn open_repo() -> std::io::Result<Repository> {
+    Repository::open(env::current_dir()?.display().to_string())
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
 }

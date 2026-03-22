@@ -49,3 +49,22 @@ pub fn stage_paths(repo: &Repository, paths: Vec<(String, bool)>) -> Result<(), 
     }
     index.write()
 }
+
+pub fn commit(repo: &Repository, message: &str) -> Result<(), git2::Error> {
+    let sig = repo.signature()?;
+    let mut index = repo.index()?;
+    let tree_id = index.write_tree()?;
+    let tree = repo.find_tree(tree_id)?;
+
+    let parent_commit = match repo.head() {
+        Ok(head) => {
+            let oid = head.target().unwrap();
+            Some(repo.find_commit(oid)?)
+        }
+        Err(_) => None,
+    };
+
+    let parents: Vec<&git2::Commit> = parent_commit.iter().collect();
+    repo.commit(Some("HEAD"), &sig, &sig, message, &tree, &parents)?;
+    Ok(())
+}
