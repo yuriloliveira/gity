@@ -1,8 +1,11 @@
 use git2::{Repository, Status};
 use ratatui::DefaultTerminal;
-use std::env;
+use std::{env, io::{Error, ErrorKind}};
 
-use crate::screen::{add_screen::AddScreen, commit_screen::CommitScreen, lib::ScreenState};
+use crate::{
+    git_extensions::lib::commit_amend,
+    screen::{add_screen::AddScreen, commit_screen::CommitScreen, lib::ScreenState},
+};
 
 mod git_extensions;
 mod screen;
@@ -14,6 +17,7 @@ fn main() -> color_eyre::Result<()> {
     match args.get(1).map(String::as_str) {
         Some("add") => ratatui::run(add_app)?,
         Some("commit") => ratatui::run(commit_app)?,
+        Some("cane") => ratatui::run(commit_amend_no_edit_app)?,
         Some(cmd) => eprintln!("Unknown command: {}", cmd),
         None => {
             eprintln!(
@@ -64,6 +68,13 @@ fn commit_app(terminal: &mut DefaultTerminal) -> std::io::Result<()> {
         if screen.handle_event(crossterm::event::read()?, &repo) == ScreenState::Finished {
             break Ok(());
         };
+    }
+}
+
+fn commit_amend_no_edit_app(_: &mut DefaultTerminal) -> std::io::Result<()> {
+    match commit_amend(&open_repo()?, None) {
+        Ok(_) => Ok(()),
+        Err(err) => Result::Err(Error::new(ErrorKind::Other, err))
     }
 }
 

@@ -68,3 +68,23 @@ pub fn commit(repo: &Repository, message: &str) -> Result<(), git2::Error> {
     repo.commit(Some("HEAD"), &sig, &sig, message, &tree, &parents)?;
     Ok(())
 }
+
+pub fn commit_amend(repo: &Repository, message: Option<&str>) -> Result<(), git2::Error> {
+    let head_commit = repo.head()?.peel_to_commit()?;                                                                    
+    let sig = repo.signature()?;
+
+    let mut index = repo.index()?;
+    let tree_id = index.write_tree()?;
+    let tree = repo.find_tree(tree_id)?;
+
+    head_commit.amend(
+        Some("HEAD"), // update_ref
+        None, // author — None keeps the original
+        Some(&sig), // committer — update timestamp
+        None, // message_encoding — None keeps original
+        message, // message — Use None to keep original
+        Some(&tree), // tree — use current index
+    )?;
+
+    Ok(())
+}
